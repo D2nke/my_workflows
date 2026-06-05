@@ -59,10 +59,21 @@ jobs:
             --junit-xml=test-results.xml
           echo "✓ Testes Python completados"
 
-      - name: "📤 Upload coverage"
+      - name: "📊 Coverage Report Generated"
+        run: |
+          if [[ -f "coverage.xml" ]]; then
+            echo "✓ Coverage.xml generated successfully"
+            echo "→ Coverage será enviado para SonarQube"
+          else
+            echo "⚠️  Nenhum relatório de cobertura gerado"
+          fi
+        continue-on-error: true
+
+      - name: "📦 Store coverage artifact"
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
+          name: pytest-coverage
           path: coverage.xml
           retention-days: 7
+        continue-on-error: true

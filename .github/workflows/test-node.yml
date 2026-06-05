@@ -53,13 +53,15 @@ jobs:
             echo "→ Cobertura não disponível (OK)"
           fi
 
-      - name: "📤 Upload coverage para Codecov (opcional)"
-        uses: codecov/codecov-action@v3
-        if: always()
-        with:
-          files: ${{ inputs.working-directory }}/coverage/lcov.info
-          flags: javascript
-          fail_ci_if_error: false
+      - name: "📊 Coverage report generated"
+        run: |
+          if [[ -f "${{ inputs.working-directory }}/coverage/lcov.info" ]]; then
+            echo "✓ LCOV coverage report available"
+            echo "→ Will be sent to SonarQube in next step"
+          else
+            echo "⚠️  No coverage report found (OK se testes não configurados)"
+          fi
+        continue-on-error: true
 
       - name: "✓ Testes Node concluídos"
-        run: echo "✓ Testes passaram!"
+        run: echo "✓ Testes passaram! Coverage enviará para SonarQube"

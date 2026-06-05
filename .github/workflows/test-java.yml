@@ -58,13 +58,23 @@ jobs:
           check_name: "Test Results"
           include_passed: true
 
-      - name: Upload coverage report
+      - name: "📊 Jacoco Coverage Report"
+        run: |
+          echo "→ Procurando relatórios Jacoco..."
+          find . -name "jacoco.xml" -type f 2>/dev/null | while read file; do
+            echo "  ✓ Encontrado: $file"
+          done
+          echo "→ Coverage será enviado para SonarQube"
+        continue-on-error: true
+
+      - name: "📦 Store coverage artifact"
         id: upload
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
+          name: jacoco-coverage
           path: |
-            **/target/site/jacoco/
+            **/target/site/jacoco/jacoco.xml
             **/build/reports/jacoco/
           retention-days: 7
+        continue-on-error: true
