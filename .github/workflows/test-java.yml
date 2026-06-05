@@ -1,0 +1,63 @@
+name: Test Java
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: "Java version to use"
+        required: false
+        type: string
+        default: "17"
+      build_tool:
+        description: "Build tool: maven or gradle"
+        required: false
+        type: string
+        default: "maven"
+    outputs:
+      coverage_report:
+        description: "Path to coverage report artifact"
+        value: ${{ jobs.test.outputs.coverage_report }}
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    outputs:
+      coverage_report: ${{ steps.upload.outputs.artifact-id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ inputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: temurin
+          cache: ${{ inputs.build_tool }}
+
+      - name: Run tests with Maven
+        if: inputs.build_tool == 'maven'
+        run: mvn test --batch-mode --no-transfer-progress
+
+      - name: Run tests with Gradle
+        if: inputs.build_tool == 'gradle'
+        run: ./gradlew test
+
+      - name: Publish test report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: "**/target/surefire-reports/*.xml,**/build/test-results/**/*.xml"
+          check_name: "Test Results"
+
+      - name: Upload coverage report
+        id: upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            **/target/site/jacoco/
+            **/build/reports/jacoco/
+          retention-days: 7

@@ -1,0 +1,62 @@
+name: Test Python
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "Python version to use"
+        required: false
+        type: string
+        default: "3.11"
+      requirements_file:
+        description: "Path to requirements file"
+        required: false
+        type: string
+        default: "requirements.txt"
+      test_path:
+        description: "Path to tests directory"
+        required: false
+        type: string
+        default: "tests/"
+      coverage_fail_under:
+        description: "Minimum coverage percentage"
+        required: false
+        type: number
+        default: 70
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ inputs.python_version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.requirements_file }}
+
+      - name: Install dependencies
+        run: pip install -r ${{ inputs.requirements_file }}
+
+      - name: Run pytest with coverage
+        run: |
+          pip install pytest pytest-cov
+          pytest ${{ inputs.test_path }} \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=${{ inputs.coverage_fail_under }} \
+            --junit-xml=test-results.xml
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 7

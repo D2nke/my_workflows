@@ -1,0 +1,69 @@
+name: Security Scan
+
+on:
+  workflow_call:
+    inputs:
+      sonar_project_key:
+        description: "SonarQube project key"
+        required: true
+        type: string
+      enable_mend:
+        description: "Enable Mend SCA scan"
+        required: false
+        type: boolean
+        default: true
+      java_version:
+        description: "Java version (if scanning Java project)"
+        required: false
+        type: string
+        default: "17"
+    secrets:
+      sonar_token:
+        required: true
+      mend_api_key:
+        required: false
+
+env:
+  SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
+jobs:
+  sonarqube:
+    name: SonarQube Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # necessário para análise de blame
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.sonar_token }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+            -Dsonar.sources=.
+            -Dsonar.qualitygate.wait=true
+
+  mend-sca:
+    name: Mend SCA (Dependency Scan)
+    runs-on: ubuntu-latest
+    if: inputs.enable_mend == true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Mend Unified Agent
+        env:
+          WS_APIKEY: ${{ secrets.mend_api_key }}
+          WS_WSS_URL: https://saas.mend.io/wss/agent
+          WS_PRODUCTNAME: ${{ github.repository_owner }}
+          WS_PROJECTNAME: ${{ github.repository }}
+        run: |
+          echo "Executando Mend SCA scan..."
+          curl -s https://unified-agent.s3.amazonaws.com/wss-unified-agent.jar -o wss-unified-agent.jar
+          java -jar wss-unified-agent.jar
