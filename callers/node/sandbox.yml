@@ -1,14 +1,47 @@
 name: Sandbox (Node)
 
 on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy (dev/staging)'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - dev
+      ref:
+        description: 'Branch or commit to deploy'
+        required: false
+        default: 'develop'
   push:
     branches: [develop]
     paths-ignore:
       - '**.md'
+  repository_dispatch:
+    types:
+      - sandbox-deploy
+      - sandbox-deploy-node
 
 jobs:
+  sandbox-info:
+    name: "ℹ️  Sandbox Deployment Info"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📋 Display deployment context"
+        run: |
+          echo "🎯 Sandbox Deployment Started"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Environment: ${{ github.event.inputs.environment || 'staging (default)' }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
   pre-build:
     name: Pre-Build Validation
+    needs: sandbox-info
     uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
 
   security:
@@ -34,9 +67,21 @@ jobs:
     needs: tests
     uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
     with:
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app-staging
       dockerfile: ./Dockerfile
       context: .
-      tag: ${{ github.sha }}-dev
+      tag: ${{ github.sha }}-staging
     secrets: inherit
     continue-on-error: true
+
+  sandbox-deploy:
+    name: "🚀 Deploy to Sandbox"
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: "✓ Sandbox deployment ready"
+        run: |
+          echo "✓ Staging environment ready for deployment"
+          echo "→ Image: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app-staging:${{ github.sha }}-staging"
+          echo "→ Waiting for manual deployment..."
