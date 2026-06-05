@@ -29,27 +29,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ inputs.java_version }}
+      - name: "☕ Setup Java ${{ inputs.java_version }}"
         uses: actions/setup-java@v4
         with:
           java-version: ${{ inputs.java_version }}
           distribution: temurin
           cache: ${{ inputs.build_tool }}
 
-      - name: Run tests with Maven
+      - name: "🧪 Run tests with Maven"
         if: inputs.build_tool == 'maven'
-        run: mvn test --batch-mode --no-transfer-progress
+        run: |
+          echo "→ Executando testes Maven..."
+          mvn clean test --batch-mode --no-transfer-progress
+          echo "✓ Testes Maven completados"
 
-      - name: Run tests with Gradle
+      - name: "🧪 Run tests with Gradle"
         if: inputs.build_tool == 'gradle'
-        run: ./gradlew test
+        run: |
+          echo "→ Executando testes Gradle..."
+          ./gradlew test
+          echo "✓ Testes Gradle completados"
 
-      - name: Publish test report
+      - name: "📋 Publish test report"
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
           report_paths: "**/target/surefire-reports/*.xml,**/build/test-results/**/*.xml"
           check_name: "Test Results"
+          include_passed: true
 
       - name: Upload coverage report
         id: upload

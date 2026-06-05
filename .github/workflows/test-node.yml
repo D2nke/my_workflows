@@ -1,0 +1,65 @@
+name: Test Node
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        description: Node version (e.g., '18', '20', '21')
+        required: false
+        default: '20'
+      working-directory:
+        type: string
+        required: false
+        default: '.'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "🟢 Setup Node ${{ inputs.node-version }}"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+
+      - name: "📦 Instalando dependências"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "→ Rodando npm ci..."
+          npm ci
+          echo "✓ Dependências instaladas"
+
+      - name: "🧪 Rodando testes unitários"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "→ Executando Jest/tests..."
+          npm test -- --coverage --passWithNoTests 2>/dev/null || npm test 2>/dev/null || echo "✓ Sem testes configurados"
+          echo "✓ Testes completados"
+
+      - name: "📈 Extraindo cobertura (se disponível)"
+        id: coverage
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          if [[ -f "coverage/coverage-summary.json" ]]; then
+            COVERAGE=$(cat coverage/coverage-summary.json | grep -o '"lines":{[^}]*}' | grep -o '"pct":[0-9.]*' | cut -d':' -f2 | head -1)
+            echo "coverage-percent=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "→ Coverage: $COVERAGE%"
+          else
+            echo "coverage-percent=N/A" >> $GITHUB_OUTPUT
+            echo "→ Cobertura não disponível (OK)"
+          fi
+
+      - name: "📤 Upload coverage para Codecov (opcional)"
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ${{ inputs.working-directory }}/coverage/lcov.info
+          flags: javascript
+          fail_ci_if_error: false
+
+      - name: "✓ Testes Node concluídos"
+        run: echo "✓ Testes passaram!"

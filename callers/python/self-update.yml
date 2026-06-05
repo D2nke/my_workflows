@@ -1,0 +1,20 @@
+name: Self-Update (Python)
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types:
+      - self-update
+      - self-update-python
+
+jobs:
+  update-workflows:
+    name: Update Workflow Files from Source
+    uses: D2nke/my_workflows/.github/workflows/files-update.yml@latest
+    with:
+      source-repo: D2nke/my_workflows
+      source-dir: callers/python
+      target-dir: .github/workflows
+      auto-merge: false
+      dry-run: false
+    secrets: inherit

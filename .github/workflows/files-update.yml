@@ -1,0 +1,131 @@
+name: Files Update Interface
+
+on:
+  workflow_call:
+    inputs:
+      source-repo:
+        type: string
+        description: Repository with source files
+        required: true
+      source-dir:
+        type: string
+        description: Directory in source repo with files to copy
+        required: true
+      target-dir:
+        type: string
+        description: Target directory in caller repo
+        required: true
+        default: '.github/workflows'
+      auto-merge:
+        type: boolean
+        description: Auto-merge the PR
+        required: false
+        default: false
+      dry-run:
+        type: boolean
+        description: Do not make actual changes (dry-run mode)
+        required: false
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: "📥 Checkout caller repo"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "📥 Checkout source repo (temporário)"
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.source-repo }}
+          path: /tmp/source
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "📁 Criar branch de atualização"
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          BRANCH_NAME="self-update-sync-$(date +%s)"
+          git checkout -b $BRANCH_NAME
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: "📋 Copiar arquivos"
+        run: |
+          echo "→ Copiando de /tmp/source/${{ inputs.source-dir }}"
+          echo "  para ${{ inputs.target-dir }}"
+          mkdir -p "${{ inputs.target-dir }}"
+          cp -v /tmp/source/${{ inputs.source-dir }}/* "${{ inputs.target-dir }}/" 2>/dev/null || true
+          echo "✓ Arquivos copiados"
+
+      - name: "✅ Verificar mudanças"
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "→ Nenhuma mudança detectada"
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "→ Mudanças detectadas:"
+            git diff --name-only
+          fi
+
+      - name: "💾 Commit e Push (se houver mudanças)"
+        if: steps.changes.outputs.has-changes == 'true' && inputs.dry-run == false
+        run: |
+          git add ${{ inputs.target-dir }}
+          git commit -m "ci: sync files from ${{ inputs.source-repo }}"
+          git push origin ${{ env.BRANCH_NAME }}
+          echo "PUSH_DONE=true" >> $GITHUB_ENV
+
+      - name: "🔗 Criar Pull Request (se houver mudanças)"
+        if: steps.changes.outputs.has-changes == 'true' && inputs.dry-run == false && env.PUSH_DONE == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const branch = process.env.BRANCH_NAME;
+            const sourceRepo = "${{ inputs.source-repo }}";
+            const sourceDir = "${{ inputs.source-dir }}";
+
+            try {
+              const pr = await github.rest.pulls.create({
+                owner,
+                repo,
+                title: `ci: self-update from ${sourceRepo}`,
+                head: branch,
+                base: github.ref_name || 'main',
+                body: `## Self-Update\n\nSyncing files from [\`${sourceRepo}\`](https://github.com/${sourceRepo}) → \`${sourceDir}\`\n\nPlease review the changes and approve/merge.`
+              });
+
+              core.info(`✓ PR #${pr.data.number} created`);
+
+              // Auto-merge se solicitado
+              if ("${{ inputs.auto-merge }}" === "true") {
+                await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: pr.data.number,
+                  merge_method: 'squash'
+                });
+                core.info(`✓ PR #${pr.data.number} auto-merged`);
+              }
+            } catch (error) {
+              core.error(`Error: ${error.message}`);
+              throw error;
+            }
+
+      - name: "✓ Sync concluído"
+        run: |
+          if [[ "${{ steps.changes.outputs.has-changes }}" == "true" ]]; then
+            echo "✓ Sincronização completada"
+            echo "  Branch: ${{ env.BRANCH_NAME }}"
+            echo "  Source: ${{ inputs.source-repo }}/${{ inputs.source-dir }}"
+            echo "  Target: ${{ inputs.target-dir }}"
+          else
+            echo "→ Nenhuma mudança necessária"
+          fi

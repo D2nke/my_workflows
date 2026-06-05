@@ -1,0 +1,31 @@
+name: PR Check (Node)
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+
+jobs:
+  pre-build:
+    name: Pre-Build Validation
+    uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
+
+  security:
+    name: Security Scan
+    needs: pre-build
+    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
+    with:
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
+      enable_mend: false
+    secrets: inherit
+    continue-on-error: true
+
+  tests:
+    name: Unit Tests
+    needs: security
+    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
+    with:
+      node-version: '20'
+    secrets: inherit

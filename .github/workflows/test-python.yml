@@ -33,27 +33,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python_version }}
+      - name: "🐍 Setup Python ${{ inputs.python_version }}"
         uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python_version }}
           cache: pip
           cache-dependency-path: ${{ inputs.requirements_file }}
 
-      - name: Install dependencies
-        run: pip install -r ${{ inputs.requirements_file }}
-
-      - name: Run pytest with coverage
+      - name: "📦 Install dependencies"
         run: |
+          echo "→ Instalando dependências..."
+          pip install -r ${{ inputs.requirements_file }}
+          echo "✓ Dependências instaladas"
+
+      - name: "🧪 Run pytest with coverage"
+        run: |
+          echo "→ Instalando pytest..."
           pip install pytest pytest-cov
+          echo "→ Executando testes..."
           pytest ${{ inputs.test_path }} \
             --cov=. \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
             --cov-fail-under=${{ inputs.coverage_fail_under }} \
             --junit-xml=test-results.xml
+          echo "✓ Testes Python completados"
 
-      - name: Upload coverage
+      - name: "📤 Upload coverage"
         uses: actions/upload-artifact@v4
         if: always()
         with:

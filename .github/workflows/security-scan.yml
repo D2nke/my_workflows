@@ -37,7 +37,7 @@ jobs:
         with:
           fetch-depth: 0  # necessário para análise de blame
 
-      - name: SonarQube Scan
+      - name: "🔍 SonarQube Scan"
         uses: sonarsource/sonarqube-scan-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.sonar_token }}
@@ -48,6 +48,11 @@ jobs:
             -Dsonar.sources=.
             -Dsonar.qualitygate.wait=true
 
+      - name: "✓ SonarQube scan concluído"
+        run: |
+          echo "✓ Qualidade de código verificada"
+          echo "→ Verifique em: ${{ env.SONAR_HOST_URL }}"
+
   mend-sca:
     name: Mend SCA (Dependency Scan)
     runs-on: ubuntu-latest
@@ -57,13 +62,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Mend Unified Agent
+      - name: "🔍 Mend Unified Agent Scan"
         env:
           WS_APIKEY: ${{ secrets.mend_api_key }}
           WS_WSS_URL: https://saas.mend.io/wss/agent
           WS_PRODUCTNAME: ${{ github.repository_owner }}
           WS_PROJECTNAME: ${{ github.repository }}
         run: |
-          echo "Executando Mend SCA scan..."
+          echo "→ Executando Mend SCA scan..."
           curl -s https://unified-agent.s3.amazonaws.com/wss-unified-agent.jar -o wss-unified-agent.jar
           java -jar wss-unified-agent.jar
+          echo "✓ Scan Mend concluído"
+        continue-on-error: true

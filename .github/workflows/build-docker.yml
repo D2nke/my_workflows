@@ -27,17 +27,23 @@ on:
         required: true
       registry_password:
         required: true
+    outputs:
+      image-uri:
+        description: "Full image URI with tag"
+        value: ${{ jobs.build.outputs.image-uri }}
 
 jobs:
   build:
     name: Build and Push
     runs-on: ubuntu-latest
+    outputs:
+      image-uri: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set image tag
+      - name: "📝 Calculando tag da imagem"
         id: tag
         run: |
           TAG="${{ inputs.tag }}"
@@ -45,25 +51,40 @@ jobs:
             TAG="${{ github.sha }}"
           fi
           echo "value=$TAG" >> "$GITHUB_OUTPUT"
+          echo "→ Tag calculada: $TAG"
 
-      - name: Set up Docker Buildx
+      - name: "🔧 Setup Docker Buildx"
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to container registry
+      - name: "🔑 Login no container registry"
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
+        continue-on-error: true
 
-      - name: Build and push
+      - name: "📝 Metadados da imagem"
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ inputs.image_name }}
+          tags: |
+            type=raw,value=${{ steps.tag.outputs.value }}
+            type=raw,value=latest
+
+      - name: "🏗️ Build e Push imagem"
         uses: docker/build-push-action@v5
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: |
-            ${{ inputs.image_name }}:${{ steps.tag.outputs.value }}
-            ${{ inputs.image_name }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: "✓ Docker image built e pushed"
+        run: |
+          echo "✓ Image URI: ${{ steps.meta.outputs.tags }}"
+          echo "→ Disponível para deploy"

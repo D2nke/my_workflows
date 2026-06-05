@@ -1,0 +1,51 @@
+name: Pre-Build Validation
+
+on:
+  workflow_call:
+
+jobs:
+  pre-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "📋 Verificando variáveis de ambiente obrigatórias"
+        run: |
+          set -e
+          echo "→ Validando vars obrigatórias..."
+
+          # Pelo menos uma estratégia de deploy deve estar definida
+          if [[ -z "${{ vars.DOCKER_REGISTRY }}" ]] && \
+             [[ -z "${{ vars.FLY_APP_NAME }}" ]]; then
+            echo "⚠️  Aviso: nem DOCKER_REGISTRY nem FLY_APP_NAME estão definidos"
+            echo "   (isso é OK se você não vai fazer deploy)"
+          fi
+
+          echo "✓ Variáveis verificadas"
+
+      - name: "📁 Verificando estrutura obrigatória do projeto"
+        run: |
+          echo "→ Validando arquivos essenciais..."
+
+          # Dockerfile é obrigatório
+          if [[ ! -f "Dockerfile" ]]; then
+            echo "❌ Erro: Dockerfile não encontrado na raiz"
+            exit 1
+          fi
+          echo "✓ Dockerfile encontrado"
+
+          # Verificar se arquivo de build existe (package.json, pom.xml, setup.py)
+          if [[ ! -f "package.json" ]] && \
+             [[ ! -f "pom.xml" ]] && \
+             [[ ! -f "setup.py" ]]; then
+            echo "❌ Erro: nenhum arquivo de build encontrado"
+            echo "   Esperado: package.json (Node), pom.xml (Java), ou setup.py (Python)"
+            exit 1
+          fi
+          echo "✓ Arquivo de build encontrado"
+
+      - name: "✓ Pre-build validação concluída"
+        run: |
+          echo "✓ Todas as verificações passaram"
+          echo "→ Projeto pronto para CI/CD"
