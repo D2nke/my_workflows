@@ -78,11 +78,10 @@ jobs:
   sandbox-deploy:
     name: "🚀 Deploy to Sandbox"
     needs: docker-build
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - name: "✓ Sandbox deployment ready"
-        run: |
-          echo "✓ Staging environment ready for deployment"
-          echo "→ Image: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app-staging:${{ github.sha }}-staging"
-          echo "→ Waiting for manual deployment..."
+    uses: D2nke/my_workflows/.github/workflows/deploy.yml@latest
+    with:
+      fly_app: ${{ vars.FLY_APP_STAGING }}
+      environment: staging
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      image_tag: ${{ github.sha }}-staging
+    secrets: inherit

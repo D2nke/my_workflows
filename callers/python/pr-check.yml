@@ -12,9 +12,20 @@ jobs:
     name: Pre-Build Validation
     uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
 
+  tests:
+    name: Unit Tests
+    needs: pre-build
+    uses: D2nke/my_workflows/.github/workflows/test-python.yml@latest
+    with:
+      python_version: '3.11'
+      requirements_file: requirements.txt
+      test_path: tests/
+      coverage_fail_under: 70
+    secrets: inherit
+
   security:
     name: Security Scan
-    needs: pre-build
+    needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
     with:
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
@@ -24,14 +35,3 @@ jobs:
       coverage_report_paths: "coverage.xml"
     secrets: inherit
     continue-on-error: true
-
-  tests:
-    name: Unit Tests
-    needs: security
-    uses: D2nke/my_workflows/.github/workflows/test-python.yml@latest
-    with:
-      python_version: '3.11'
-      requirements_file: requirements.txt
-      test_path: tests/
-      coverage_fail_under: 70
-    secrets: inherit

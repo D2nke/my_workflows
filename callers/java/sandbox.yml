@@ -44,9 +44,18 @@ jobs:
     needs: sandbox-info
     uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
 
+  tests:
+    name: Unit Tests
+    needs: pre-build
+    uses: D2nke/my_workflows/.github/workflows/test-java.yml@latest
+    with:
+      java_version: '17'
+      build_tool: maven
+    secrets: inherit
+
   security:
     name: Security Scan
-    needs: pre-build
+    needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
     with:
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-staging
@@ -57,21 +66,12 @@ jobs:
     secrets: inherit
     continue-on-error: true
 
-  tests:
-    name: Unit Tests
-    needs: security
-    uses: D2nke/my_workflows/.github/workflows/test-java.yml@latest
-    with:
-      java_version: '17'
-      build_tool: maven
-    secrets: inherit
-
   docker-build:
     name: Build Docker Image
-    needs: tests
+    needs: security
     uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
     with:
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-api-staging
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile
       context: .
       tag: ${{ github.sha }}-staging
@@ -81,11 +81,10 @@ jobs:
   sandbox-deploy:
     name: "🚀 Deploy to Sandbox"
     needs: docker-build
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - name: "✓ Sandbox deployment ready"
-        run: |
-          echo "✓ Staging environment ready for deployment"
-          echo "→ Image: docker.io/${{ secrets.DOCKER_USERNAME }}/my-api-staging:${{ github.sha }}-staging"
-          echo "→ Waiting for manual deployment..."
+    uses: D2nke/my_workflows/.github/workflows/deploy.yml@latest
+    with:
+      fly_app: ${{ vars.FLY_APP_STAGING }}
+      environment: staging
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      image_tag: ${{ github.sha }}-staging
+    secrets: inherit

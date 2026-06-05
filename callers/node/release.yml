@@ -21,7 +21,7 @@ jobs:
     name: Security Scan (Snyk + SonarQube)
     needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
-    with: 
+    with:
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
       sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
       enable_snyk: true
@@ -31,10 +31,10 @@ jobs:
 
   docker-build:
     name: Build Docker Image
-    needs: security-snyk
+    needs: security-scan
     uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
     with:
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile
       context: .
       tag: ${{ github.sha }}
@@ -45,8 +45,36 @@ jobs:
     needs: docker-build
     uses: D2nke/my_workflows/.github/workflows/deploy.yml@latest
     with:
-      target: server
+      fly_app: ${{ vars.FLY_APP_NAME }}
       environment: prd
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      image_tag: ${{ github.sha }}
     secrets: inherit
-    continue-on-error: true
+
+  release-tag:
+    name: Create Release Tag
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "📝 Gerando versão..."
+        id: version
+        run: |
+          VERSION="v0.0.${{ github.run_number }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "→ Version: $VERSION"
+
+      - name: "🏷️  Criando git tag..."
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a ${{ steps.version.outputs.version }} -m "Release ${{ steps.version.outputs.version }}"
+          git push origin ${{ steps.version.outputs.version }}
+          echo "✓ Tag ${{ steps.version.outputs.version }} criada e enviada"
+
+      - name: "✓ Release concluído"
+        run: echo "✓ Release ${{ steps.version.outputs.version }} finalizado"
