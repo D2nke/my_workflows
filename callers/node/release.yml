@@ -11,30 +11,27 @@ jobs:
     name: Pre-Build Validation
     uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
 
+  tests:
+    name: Unit Tests
+    needs: pre-build
+    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
+    secrets: inherit
+
   security-scan:
     name: Security Scan (Snyk + SonarQube)
-    needs: pre-build
+    needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
-    with:
+    with: 
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
       sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
       enable_snyk: true
       enable_sonar: true
       coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
     secrets: inherit
-    continue-on-error: true
-
-  tests:
-    name: Unit Tests
-    needs: security-snyk
-    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
-    with:
-      node-version: '20'
-    secrets: inherit
 
   docker-build:
     name: Build Docker Image
-    needs: tests
+    needs: security-snyk
     uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
     with:
       image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app
@@ -53,31 +50,3 @@ jobs:
       image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app
     secrets: inherit
     continue-on-error: true
-
-  release-tag:
-    name: Create Release Tag
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: "📝 Generate version"
-        id: version
-        run: |
-          VERSION="v0.0.${{ github.run_number }}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "→ Version: $VERSION"
-
-      - name: "🏷️  Create git tag"
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git tag -a ${{ steps.version.outputs.version }} -m "Release ${{ steps.version.outputs.version }}"
-          git push origin ${{ steps.version.outputs.version }}
-          echo "✓ Tag pushed"
-
-      - name: "✓ Release concluído"
-        run: echo "✓ Release ${{ steps.version.outputs.version }} criado"

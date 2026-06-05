@@ -44,9 +44,15 @@ jobs:
     needs: sandbox-info
     uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
 
+  tests:
+    name: Unit Tests
+    needs: pre-build
+    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
+    secrets: inherit
+
   security:
     name: Security Scan
-    needs: pre-build
+    needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
     with:
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-staging
@@ -57,18 +63,12 @@ jobs:
     secrets: inherit
     continue-on-error: true
 
-  tests:
-    name: Unit Tests
-    needs: security
-    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
-    secrets: inherit
-
   docker-build:
     name: Build Docker Image
-    needs: tests
+    needs: security
     uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
     with:
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/my-app-staging
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile
       context: .
       tag: ${{ github.sha }}-staging

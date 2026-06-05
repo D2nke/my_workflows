@@ -62,7 +62,6 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
-        continue-on-error: true
 
       - name: "📝 Metadados da imagem"
         id: meta
