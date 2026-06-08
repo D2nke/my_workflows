@@ -39,7 +39,6 @@ jobs:
         with:
           fetch-depth: 0
           path: my_project
-          token: ${{ secrets.GH_PAT }}
 
       - name: "📥 Checkout source repo (temporário)"
         uses: actions/checkout@v4
