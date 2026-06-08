@@ -36,7 +36,7 @@ jobs:
     steps:
 
       - name: "Config sage directory"
-          run: git config --global --add safe.directory /tmp/source
+        run: git config --global --add safe.directory /tmp/source
 
       - name: "📥 Checkout caller repo"
         uses: actions/checkout@v4
