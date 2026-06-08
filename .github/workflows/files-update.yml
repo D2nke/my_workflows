@@ -55,10 +55,15 @@ jobs:
           echo "========================="
           ls -la
           echo "========================="
-
+          ls -la ./my_project
+          echo "========================="
+          ls -la ./my_workflows
+          echo "========================="
+          
 
       - name: "📁 Criar branch de atualização"
         run: |
+          cd ./my_project
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           BRANCH_NAME="self-update-sync-$(date +%s)"
@@ -69,13 +74,14 @@ jobs:
         run: |
           echo "→ Copiando de ${{ inputs.source-dir }}"
           echo "  para ${{ inputs.target-dir }}"
-          mkdir -p "${{ inputs.target-dir }}"
-          cp -v ${{ inputs.source-dir }}/* "${{ inputs.target-dir }}/" 2>/dev/null || true
+          mkdir -p ./my_project/"${{ inputs.target-dir }}"
+          cp -v ./my_workflows/${{ inputs.source-dir }}/* ./my_project/"${{ inputs.target-dir }}/" 2>/dev/null || true
           echo "✓ Arquivos copiados"
 
       - name: "✅ Verificar mudanças"
         id: changes
         run: |
+          cd ./my_project
           if git diff --quiet; then
             echo "has-changes=false" >> $GITHUB_OUTPUT
             echo "→ Nenhuma mudança detectada"
@@ -88,6 +94,7 @@ jobs:
       - name: "💾 Commit e Push (se houver mudanças)"
         if: steps.changes.outputs.has-changes == 'true' && inputs.dry-run == false
         run: |
+          cd ./my_project
           git add ${{ inputs.target-dir }}
           git commit -m "ci: sync files from ${{ inputs.source-repo }}"
           git push origin ${{ env.BRANCH_NAME }}
