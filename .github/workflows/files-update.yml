@@ -33,13 +33,13 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      workflows: write
     steps:
       - name: "📥 Checkout caller repo"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           path: my_project
+          token: ${{ secrets.GH_PAT }}
 
       - name: "📥 Checkout source repo (temporário)"
         uses: actions/checkout@v4
