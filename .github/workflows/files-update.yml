@@ -48,10 +48,13 @@ jobs:
 
       - name: "Check folders"
         run: |
+          pwd
+          echo "========================="
           ls .
-          ls ./my_workflows
+          echo "========================="
           ls -la
-          ls ./my_apps_demo
+          echo "========================="
+
 
       - name: "📁 Criar branch de atualização"
         run: |
