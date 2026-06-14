@@ -43,21 +43,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: my_workflows
 
-      - name: "Check folders"
-        run: |
-          pwd
-          echo "========================="
-          ls .
-          echo "========================="
-          ls -la
-          echo "========================="
-          ls -la ./my_project
-          echo "========================="
-          ls -la ./my_workflows
-          echo "========================="
-          echo "${{ github.base_ref }}"
-          
-
       - name: "📁 Configurar git"
         run: |
           cd ./my_project
@@ -76,13 +61,14 @@ jobs:
         id: changes
         run: |
           cd ./my_project
-          if git diff --quiet; then
+          git add ${{ inputs.target-dir }}
+          if git diff --cached --quiet; then
             echo "has-changes=false" >> $GITHUB_OUTPUT
             echo "→ Nenhuma mudança detectada"
           else
             echo "has-changes=true" >> $GITHUB_OUTPUT
             echo "→ Mudanças detectadas:"
-            git diff --name-only
+            git diff --cached --name-only
           fi
 
       - name: "💾 Commit e Push (se houver mudanças)"
@@ -90,7 +76,6 @@ jobs:
         run: |
           cd ./my_project
           git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git
-          git add ${{ inputs.target-dir }}
           git commit -m "ci: sync files from ${{ inputs.source-repo }}"
           git push origin HEAD:${{ github.ref_name }}
 
