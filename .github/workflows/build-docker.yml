@@ -102,7 +102,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           labels: |
-            org.opencontainers.image.source=${{ steps.tag.outputs.path_repository }}
+            org.opencontainers.image.source=TESTANDO O VALOR REAL
           tags: |
             ${{ steps.tag.outputs.path }}:latest
             ${{ steps.tag.outputs.path }}:${{ steps.tag.outputs.tag }}

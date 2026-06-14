@@ -34,7 +34,7 @@ jobs:
     needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
     with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-staging
       sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
       enable_snyk: true
       enable_sonar: true
