@@ -39,7 +39,7 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           echo "→ Verificando conexão com o Fly.io..."
-          flyctl status --app ${{ inputs.fly_app }}
+          flyctl auth whoami
           echo "✓ Conexão bem sucedida"
 
       - name: "🚀 Deployando no Fly.io..."
