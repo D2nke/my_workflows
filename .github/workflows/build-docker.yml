@@ -45,11 +45,19 @@ jobs:
         id: tag
         run: |
           TAG="${{ inputs.tag }}"
+          USERNAME=${{ vars.GHCR_USERNAME }}
+          NAME_REPOSITORY=${{ github.event.repository.name }}
+
           if [ -z "$TAG" ]; then
             TAG="${{ github.sha }}"
           fi
-          echo "value=$TAG" >> "$GITHUB_OUTPUT"
-          echo "→ Tag calculada: $TAG"
+          
+          PATH="ghcr.io/$USERNAME/$NAME_REPOSITORY"
+          TAGS="$PATH:latest,PATH:$TAG"
+          
+          # Salva no output do GitHub Actions
+          echo "value=$TAGS" >> "$GITHUB_OUTPUT"
+          echo "→ Tag calculada: $TAGS"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -79,14 +87,10 @@ jobs:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-          # Apenas tags para o ghcr.io
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
 
       - name: "✓ Docker image built e pushed"
         run: |
