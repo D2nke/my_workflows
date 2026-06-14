@@ -53,11 +53,13 @@ jobs:
           fi
           
           PATH="ghcr.io/$USERNAME/$NAME_REPOSITORY"
-          TAGS="$PATH:latest,$PATH:$TAG"
           
           # Salva no output do GitHub Actions
-          echo "value=$TAGS" >> "$GITHUB_OUTPUT"
-          echo "→ Tag calculada: $TAGS"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "path=$PATH" >> "$GITHUB_OUTPUT"
+          
+          echo "→ Tag calculada: $TAG"
+          echo "→ Path: $PATH"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -84,7 +86,7 @@ jobs:
         with:
           images: ${{ inputs.image_name }}
           tags: |
-            type=raw,value=${{ steps.tag.outputs.value }}
+            type=raw,value=${{ steps.tag.outputs.tag }}
             type=raw,value=latest
 
       - name: "🏗️ Build e Push imagem"
@@ -96,9 +98,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+          label: org.opencontainers.image.source=${{ steps.tag.outputs.path }}
           tags: |
-            ghcr.io/d2nke/node_app:latest
-            ghcr.io/d2nke/node_app:97757398ad77d82cfd3dfa7cea9b143d40047d22-dev
+            ${{ steps.tag.outputs.path }}:latest
+            ${{ steps.tag.outputs.path }}:${{ steps.tag.outputs.tag }}
 
       - name: "✓ Docker image built e pushed"
         run: |
