@@ -23,9 +23,7 @@ on:
         type: string
         default: ""
     secrets:
-      registry_username:
-        required: true
-      registry_password:
+      DOCKER_PASSWORD:
         required: true
     outputs:
       image-uri:
