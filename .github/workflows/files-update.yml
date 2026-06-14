@@ -60,6 +60,7 @@ jobs:
           echo "========================="
           ls -la ./my_workflows
           echo "========================="
+          echo "${{ github.base_ref }}"
           
 
       - name: "📁 Criar branch de atualização"
@@ -117,7 +118,7 @@ jobs:
                 repo,
                 title: `ci: self-update from ${sourceRepo}`,
                 head: branch,
-                base: github.ref_name || 'main',
+                base: github.ref_name || 'master',
                 body: `## Self-Update\n\nSyncing files from [\`${sourceRepo}\`](https://github.com/${sourceRepo}) → \`${sourceDir}\`\n\nPlease review the changes and approve/merge.`
               });
 
