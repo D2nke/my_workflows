@@ -2,27 +2,6 @@ name: Sandbox (Node)
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy (dev/staging)'
-        required: false
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - dev
-      ref:
-        description: 'Branch or commit to deploy'
-        required: false
-        default: 'develop'
-  push:
-    branches: [develop]
-    paths-ignore:
-      - '**.md'
-  repository_dispatch:
-    types:
-      - sandbox-deploy
-      - sandbox-deploy-node
 
 jobs:
   sandbox-info:
@@ -36,7 +15,7 @@ jobs:
           echo "Trigger: ${{ github.event_name }}"
           echo "Ref: ${{ github.ref }}"
           echo "SHA: ${{ github.sha }}"
-          echo "Environment: ${{ github.event.inputs.environment || 'staging (default)' }}"
+          echo "Environment: dev"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   pre-build:
@@ -55,7 +34,7 @@ jobs:
     needs: tests
     uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
     with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-staging
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
       sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
       enable_snyk: true
       enable_sonar: true
@@ -70,15 +49,15 @@ jobs:
       image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile
       context: .
-      tag: ${{ github.sha }}-staging
+      tag: ${{ github.sha }}-dev
 
   sandbox-deploy:
     name: "🚀 Deploy to Sandbox"
     needs: docker-build
     uses: D2nke/my_workflows/.github/workflows/deploy.yml@latest
     with:
-      fly_app: ${{ vars.FLY_APP_STAGING }}
-      environment: staging
+      fly_app: ${{ vars.FLY_APP_DEV }}
+      environment: dev
       image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
-      image_tag: ${{ github.sha }}-staging
+      image_tag: ${{ github.sha }}-dev
     secrets: inherit
