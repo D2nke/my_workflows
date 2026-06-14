@@ -61,7 +61,6 @@ jobs:
       enable_sonar: true
       coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
     secrets: inherit
-    continue-on-error: true
 
   docker-build:
     name: Build Docker Image
@@ -72,8 +71,6 @@ jobs:
       dockerfile: ./Dockerfile
       context: .
       tag: ${{ github.sha }}-staging
-    secrets: inherit
-    continue-on-error: true
 
   sandbox-deploy:
     name: "🚀 Deploy to Sandbox"
