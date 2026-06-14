@@ -62,6 +62,7 @@ jobs:
           
           echo "→ Tag calculada: $TAG"
           echo "→ Path: $PATH"
+          echo "→ Path repository: $PATH_REPOSITORY"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -100,7 +101,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-          labels: org.opencontainers.image.source=${{ steps.tag.outputs.path_repository }}
+          labels: |
+            org.opencontainers.image.source=${{ steps.tag.outputs.path_repository }}
           tags: |
             ${{ steps.tag.outputs.path }}:latest
             ${{ steps.tag.outputs.path }}:${{ steps.tag.outputs.tag }}
