@@ -5,7 +5,6 @@ on:
     inputs:
       fly_app:
         description: "Nome do app no Fly.io"
-        required: true
         type: string
         default: ${{ github.event.repository.name }}
       environment:
