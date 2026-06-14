@@ -100,7 +100,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-          label: org.opencontainers.image.source=${{ steps.tag.outputs.path_repository }}
+          labels: org.opencontainers.image.source=${{ steps.tag.outputs.path_repository }}
           tags: |
             ${{ steps.tag.outputs.path }}:latest
             ${{ steps.tag.outputs.path }}:${{ steps.tag.outputs.tag }}
