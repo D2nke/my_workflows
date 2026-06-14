@@ -53,10 +53,12 @@ jobs:
           fi
           
           PATH="ghcr.io/$USERNAME/$NAME_REPOSITORY"
+          PATH_REPOSITORY="https://github.com/$USERNAME/$NAME_REPOSITORY"
           
           # Salva no output do GitHub Actions
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "path=$PATH" >> "$GITHUB_OUTPUT"
+          echo "path_repository=$PATH_REPOSITORY >> $GITHUB_OUTPUT"
           
           echo "→ Tag calculada: $TAG"
           echo "→ Path: $PATH"
@@ -98,7 +100,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-          label: org.opencontainers.image.source=${{ steps.tag.outputs.path }}
+          label: org.opencontainers.image.source=${{ steps.tag.outputs.path_repository }}
           tags: |
             ${{ steps.tag.outputs.path }}:latest
             ${{ steps.tag.outputs.path }}:${{ steps.tag.outputs.tag }}
