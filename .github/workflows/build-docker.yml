@@ -102,7 +102,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.action }}/${{ github.event.repository.name}}
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name}}
           tags: |
             ${{ steps.tag.outputs.path }}:latest
             ${{ steps.tag.outputs.path }}:${{ steps.tag.outputs.tag }}
