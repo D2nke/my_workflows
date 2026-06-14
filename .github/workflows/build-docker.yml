@@ -51,6 +51,9 @@ jobs:
           echo "value=$TAG" >> "$GITHUB_OUTPUT"
           echo "→ Tag calculada: $TAG"
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
       - name: "🔧 Setup Docker Buildx"
         uses: docker/setup-buildx-action@v3
 
@@ -76,10 +79,14 @@ jobs:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          # Apenas tags para o ghcr.io
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ steps.meta.outputs.tags }}
 
       - name: "✓ Docker image built e pushed"
         run: |
