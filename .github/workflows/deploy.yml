@@ -46,8 +46,11 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
-          flyctl status --app ${{ inputs.fly_app }} 2>/dev/null \
-            || flyctl apps create --name ${{ inputs.fly_app }} --org ${{ vars.FLY_ORG }}
+          name_app="${{ inputs.fly_app }}"
+          name_app="${name_app//_/-}"
+
+          flyctl status --app "$name_app" 2>/dev/null \
+            || flyctl apps create --name "$name_app" --org "${{ vars.FLY_ORG }}"
 
       - name: "🚀 Deployando no Fly.io..."
         env:
