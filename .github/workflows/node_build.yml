@@ -90,7 +90,7 @@ jobs:
   security:
     name: Security Scan
     needs: tests
-    uses: D2nke/my_workflows/.github/actions/security-scan.yml@feat/new_base
+    uses: D2nke/actions/security-scan@feat/new_code_base
     with:
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
       enable_snyk: ${{ inputs.enable-snyk }}
