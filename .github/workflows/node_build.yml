@@ -94,7 +94,8 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: D2nke/actions/security-scan@feat/new_code_base
+      - name: "Scan sonar + snyk"
+        uses: D2nke/actions/security-scan@feat/new_code_base
         with:
           sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
           enable_snyk: ${{ inputs.enable-snyk }}
@@ -110,7 +111,8 @@ jobs:
     needs: security
     if: ${{ always() && inputs.pr-check == false }}
     steps:
-      - uses: D2nke/actions/build-docker@feat/new_code_base
+      - name: "Build Docker image"
+        uses: D2nke/actions/build-docker@feat/new_code_base
         with:
           image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
           ghcr_username: ${{ vars.GHCR_USERNAME }}
