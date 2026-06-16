@@ -43,6 +43,7 @@ jobs:
           echo "✓ Conexão bem sucedida"
 
       - name: "📋 Criando app se não existir..."
+        id: create-app
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
@@ -54,8 +55,9 @@ jobs:
 
           owner_app="${{ github.repository_owner }}"
           owner_app="${owner_app,,}"
-          
+
           name_app="$org_name-${name_app//_/-}-$owner_app"
+          echo "name_app=$name_app" >> $GITHUB_OUTPUT
 
           echo "Formando nome da aplicação:"
           echo "name app: $name_app"
@@ -68,7 +70,7 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           echo "→ Iniciando deploy..."
-          echo "  App:      ${{ inputs.fly_app }}"
+          echo "  App:      ${{ steps.create-app.outputs.name_app }}"
           echo "  Imagem:   ${{ inputs.image_name }}:${{ inputs.image_tag }}"
           echo "  Ambiente: ${{ inputs.environment }}"
           flyctl deploy \
