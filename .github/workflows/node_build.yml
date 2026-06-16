@@ -3,15 +3,6 @@ name: Sandbox (Node)
 on:
   workflow_call:
     inputs:
-      enable-test:
-        type: boolean
-        default: false
-      enable-sonar:
-        type: boolean
-        default: false
-      enable-snyk:
-        type: boolean
-        default: false
       node-version:
         type: string
         description: Node version (e.g., '18', '20', '21')
@@ -26,7 +17,6 @@ on:
 jobs:
   tests:
     name: "Run Tests"
-    if: ${{ inputs.enable-test }}
     runs-on: ubuntu-latest
     steps:
 
@@ -91,15 +81,12 @@ jobs:
   security:
     name: Security Scan
     needs: tests
-    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: "Scan sonar + snyk"
         uses: D2nke/actions/security-scan@feat/new_code_base
         with:
           sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
-          enable_snyk: ${{ inputs.enable-snyk }}
-          enable_sonar: ${{ inputs.enable-sonar }}
           coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
           sonar_org_key: ${{ vars.SONAR_ORGANIZATION || '' }}
           snyk_token: ${{ secrets.SNYK_TOKEN }}
@@ -109,7 +96,7 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     needs: security
-    if: ${{ always() && inputs.pr-check == false }}
+    if: ${{ inputs.pr-check == false }}
     steps:
       - name: "Build Docker image"
         uses: D2nke/actions/build-docker@feat/new_code_base
