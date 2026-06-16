@@ -87,17 +87,19 @@ jobs:
       - name: "✓ Testes Node concluídos"
         run: echo "✓ Testes passaram! Coverage enviará para SonarQube"
 
-  # security:
-  #   name: Security Scan
-  #   needs: tests
-  #   uses: D2nke/my_workflows/.github/actions/security-scan.yml@feat/new_base
-  #   with:
-  #     sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
-  #     sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
-  #     enable_snyk: ${{ inputs.enable-snyk }}
-  #     enable_sonar: ${{ inputs.enable-sonar }}
-  #     coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
-  #   secrets: inherit
+  security:
+    name: Security Scan
+    needs: tests
+    uses: D2nke/my_workflows/.github/actions/security-scan.yml@feat/new_base
+    with:
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
+      enable_snyk: ${{ inputs.enable-snyk }}
+      enable_sonar: ${{ inputs.enable-sonar }}
+      coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
+      sonar_org_key: ${{ vars.SONAR_ORGANIZATION || '' }}
+      sonar_token: ${{ secrets.SONAR_TOKEN }}
+      snyk_token: ${{ secrets.SNYK_TOKEN }}
+    secrets: inherit
 
   # docker-build:
   #   name: Build Docker Image
