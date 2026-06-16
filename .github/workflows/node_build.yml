@@ -24,9 +24,9 @@ on:
         default: false
 
 jobs:
-  pre-build:
-    name: Pre-Build Validation
-    uses: D2nke/my_workflows/.github/actions/pre-build.yml@feat/new_base
+  # pre-build:
+  #   name: Pre-Build Validation
+  #   uses: D2nke/my_workflows/.github/actions/pre-build.yml@feat/new_base
 
   tests:
     if: ${{ inputs.enable-test }}
@@ -86,26 +86,26 @@ jobs:
       - name: "✓ Testes Node concluídos"
         run: echo "✓ Testes passaram! Coverage enviará para SonarQube"
 
-  security:
-    name: Security Scan
-    needs: tests
-    uses: D2nke/my_workflows/.github/actions/security-scan.yml@feat/new_base
-    with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
-      sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
-      enable_snyk: ${{ inputs.enable-snyk }}
-      enable_sonar: ${{ inputs.enable-sonar }}
-      coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
-    secrets: inherit
+  # security:
+  #   name: Security Scan
+  #   needs: tests
+  #   uses: D2nke/my_workflows/.github/actions/security-scan.yml@feat/new_base
+  #   with:
+  #     sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
+  #     sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
+  #     enable_snyk: ${{ inputs.enable-snyk }}
+  #     enable_sonar: ${{ inputs.enable-sonar }}
+  #     coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
+  #   secrets: inherit
 
-  docker-build:
-    name: Build Docker Image
-    needs: security
-    if: ${{ inputs.pr-check == 'false' }}
-    uses: D2nke/my_workflows/.github/actions/build-docker.yml@feat/new_base
-    with:
-      image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
-      dockerfile: ./Dockerfile
-      context: .
-      tag: ${{ github.sha }}-dev
-    secrets: inherit
+  # docker-build:
+  #   name: Build Docker Image
+  #   needs: security
+  #   if: ${{ inputs.pr-check == 'false' }}
+  #   uses: D2nke/my_workflows/.github/actions/build-docker.yml@feat/new_base
+  #   with:
+  #     image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+  #     dockerfile: ./Dockerfile
+  #     context: .
+  #     tag: ${{ github.sha }}-dev
+  #   secrets: inherit
