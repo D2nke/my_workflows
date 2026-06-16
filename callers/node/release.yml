@@ -2,9 +2,11 @@ name: Release (Node)
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
     paths-ignore:
       - '**.md'
+      - '.github/**'
 
 jobs:
   pre-build:
