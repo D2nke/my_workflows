@@ -2,9 +2,11 @@ name: Deploy (Fly.io)
 
 on:
   workflow_call:
-    
+
 jobs:
   deploy:
-    name: "Deploy Sandbox"
-    uses: D2nke/my_workflows/.github/actions/deploy.yml@feat/new_base
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+  
+    - name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
+      uses: D2nke/actions/deploy@feat/new_code_base

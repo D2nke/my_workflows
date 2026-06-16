@@ -5,13 +5,13 @@ on:
     
 jobs:
   deploy:
-    name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
-    uses: D2nke/my_workflows/.github/actions/deploy.yml@feat/new_base
-    with:
-      environment: prd
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+  
+    - name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
+      uses: D2nke/actions/deploy@feat/new_code_base
+      with:
+        environment: prd
       
-  release_tag:
-    name: "Create tag for new release"
-    uses: D2nke/my_workflows/.github/actions/release-tag.yml@feat/new_base
-    secrets: inherit
+    - name: "Create tag for new release"
+      uses: D2nke/actions/release-tag@feat/new_code_base
