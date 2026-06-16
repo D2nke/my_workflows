@@ -24,10 +24,6 @@ on:
         default: false
 
 jobs:
-  pre-build:
-    name: Pre-Build Validation
-    uses: D2nke/actions/pre-build@feat/new_code_base
-
   tests:
     name: "Run Tests"
     runs-on: ubuntu-latest
@@ -35,6 +31,9 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Pre-Build Validation
+        uses: D2nke/actions/pre-build@feat/new_code_base
 
       - name: "🟢 Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@v4
