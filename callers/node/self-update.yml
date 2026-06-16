@@ -15,6 +15,5 @@ jobs:
       source-repo: D2nke/my_workflows
       source-dir: callers/node
       target-dir: .github/workflows
-      auto-merge: false
       dry-run: false
     secrets: inherit

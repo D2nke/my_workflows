@@ -10,24 +10,12 @@ on:
       - '.github/**'
 
 jobs:
-  pre-build:
-    name: Pre-Build Validation
-    uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
-
-  tests:
-    name: Unit Tests
-    needs: pre-build
-    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
-    secrets: inherit
-
-  security:
-    name: Security Scan
-    needs: tests
-    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
+  node-sandbox-build:
+    name: "🚀 Node Build Sandbox"
+    uses: D2nke/my_workflows/.github/workflows/node_build.yml@latest
     with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
-      sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
-      enable_snyk: true
-      enable_sonar: true
-      coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
+      enable-test: true
+      enable-sonar: ${{ vars.SONAR_OVERALL_STATUS || true }}
+      enable-snky: ${{ vars.SNKY_OVERALL_STATUS || true}}
+      pr-check: true
     secrets: inherit

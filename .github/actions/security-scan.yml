@@ -8,11 +8,6 @@ on:
         required: false
         type: string
         default: ""
-      sonar_organization:
-        description: "SonarQube organization key"
-        required: false
-        type: string
-        default: ""
       enable_snyk:
         description: "Enable Snyk dependency scan"
         required: false
@@ -90,7 +85,6 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=${{ inputs.sonar_project_key || format('{0}-{1}', github.repository_owner, github.event.repository.name) }}
-            ${{ inputs.sonar_organization && format('-Dsonar.organization={0}', inputs.sonar_organization) || '' }}
             -Dsonar.sources=.
             -Dsonar.organization=${{ vars.SONAR_ORG_KEY }}
             -Dsonar.coverage.exclusions=**/.github/**,**/node_modules/**,**/*.test.js,**/*.test.py,**/tests/**,Dockerfile

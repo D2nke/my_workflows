@@ -1,0 +1,111 @@
+name: Sandbox (Node)
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable-test:
+        type: boolean
+        default: false
+      enable-sonar:
+        type: boolean
+        default: false
+      enable-snyk:
+        type: boolean
+        default: false
+      node-version:
+        type: string
+        description: Node version (e.g., '18', '20', '21')
+        default: '20'
+      working-directory:
+        type: string
+        default: '.'
+      pr-check:
+        type: boolean
+        default: false
+
+jobs:
+  pre-build:
+    name: Pre-Build Validation
+    uses: D2nke/my_workflows/.github/workflows/actions/pre-build.yml@latest
+
+  tests:
+    if: ${{ inputs.enable-test }}
+    name: "Run Tests"
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "🟢 Setup Node ${{ inputs.node-version }}"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+
+      - name: "📦 Instalando dependências"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "→ Rodando npm ci..."
+          npm ci
+          echo "✓ Dependências instaladas"
+
+      - name: "🧪 Rodando testes unitários"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "→ Executando Jest/tests..."
+          npm test -- --coverage --passWithNoTests \
+            --coverageReporters=json-summary \
+            --coverageReporters=lcov \
+            --coverageReporters=text
+          echo "✓ Testes completados"
+
+      - name: "📈 Extraindo cobertura (se disponível)"
+        id: coverage
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          if [[ -f "coverage/coverage-summary.json" ]]; then
+            COVERAGE=$(cat coverage/coverage-summary.json | grep -o '"lines":{[^}]*}' | grep -o '"pct":[0-9.]*' | cut -d':' -f2 | head -1)
+            echo "coverage-percent=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "→ Coverage: $COVERAGE%"
+          else
+            echo "coverage-percent=N/A" >> $GITHUB_OUTPUT
+            echo "→ Cobertura não disponível (OK)"
+          fi
+
+      - name: "📊 Coverage report generated"
+        run: |
+          if [[ -f "${{ inputs.working-directory }}/coverage/lcov.info" ]]; then
+            echo "✓ LCOV coverage report available"
+            echo "→ Will be sent to SonarQube in next step"
+          else
+            echo "⚠️  No coverage report found (OK se testes não configurados)"
+          fi
+        continue-on-error: true
+
+      - name: "✓ Testes Node concluídos"
+        run: echo "✓ Testes passaram! Coverage enviará para SonarQube"
+
+  security:
+    name: Security Scan
+    needs: tests
+    uses: D2nke/my_workflows/.github/workflows/actions/security-scan.yml@latest
+    with:
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
+      sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
+      enable_snyk: ${{ inputs.enable-snyk }}
+      enable_sonar: ${{ inputs.enable-sonar }}
+      coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
+    secrets: inherit
+
+  docker-build:
+    name: Build Docker Image
+    needs: security
+    if: ${{ inputs.pr-check == 'false' }}
+    uses: D2nke/my_workflows/.github/workflows/actions/build-docker.yml@latest
+    with:
+      image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      dockerfile: ./Dockerfile
+      context: .
+      tag: ${{ github.sha }}-dev
+    secrets: inherit

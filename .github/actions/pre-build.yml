@@ -10,6 +10,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: "ℹ️  Sandbox Deployment Info"
+        runs-on: ubuntu-latest
+        steps:
+          - name: "📋 Display deployment context"
+            run: |
+              echo "🎯 Sandbox Deployment Started"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "Trigger: ${{ github.event_name }}"
+              echo "Ref: ${{ github.ref }}"
+              echo "SHA: ${{ github.sha }}"
+              echo "Environment: dev"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: "📋 Verificando variáveis de ambiente obrigatórias"
         run: |
           set -e

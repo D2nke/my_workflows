@@ -14,62 +14,16 @@ on:
         default: false
 
 jobs:
-  sandbox-info:
-    name: "ℹ️  Sandbox Deployment Info"
-    runs-on: ubuntu-latest
-    steps:
-      - name: "📋 Display deployment context"
-        run: |
-          echo "🎯 Sandbox Deployment Started"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Trigger: ${{ github.event_name }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "SHA: ${{ github.sha }}"
-          echo "Environment: dev"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-  pre-build:
-    name: Pre-Build Validation
-    needs: sandbox-info
-    uses: D2nke/my_workflows/.github/workflows/pre-build.yml@fix/bugs
-
-  tests:
-    if: ${{ inputs.enable-test }}
-    name: Unit Tests
-    needs: pre-build
-    uses: D2nke/my_workflows/.github/workflows/test-node.yml@fix/bugs
+  node-sandbox-build:
+    name: "🚀 Node Build Sandbox"
+    uses: D2nke/my_workflows/.github/workflows/node_build.yml@latest
+    with:
+      enable-test: ${{ inputs.enable-test }}
+      enable-sonar: ${{ inputs.enable-sonar }}
+      enable-snky: ${{ inputs.enable-snky }}
     secrets: inherit
 
-  security:
-    name: Security Scan
-    needs: tests
-    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@fix/bugs
-    with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
-      sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
-      enable_snyk: ${{ inputs.enable-snyk }}
-      enable_sonar: ${{ inputs.enable-sonar }}
-      coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
-    secrets: inherit
-
-  docker-build:
-    name: Build Docker Image
-    needs: security
-    if: always()
-    uses: D2nke/my_workflows/.github/workflows/build-docker.yml@fix/bugs
-    with:
-      image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
-      dockerfile: ./Dockerfile
-      context: .
-      tag: ${{ github.sha }}-dev
-    secrets: inherit
-
-  sandbox-deploy:
-    name: "🚀 Deploy to Sandbox"
-    needs: docker-build
-    if: always()
-    uses: D2nke/my_workflows/.github/workflows/deploy.yml@fix/bugs
-    with:
-      environment: dev
-      image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+  node-sandbox-deploy:
+    name: "🚀 Node Deploy to Sandbox"
+    uses: D2nke/my_workflows/.github/workflows/node_sandbox_deploy.yml@latest
     secrets: inherit
