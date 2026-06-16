@@ -4,6 +4,6 @@ on:
 
 jobs:
   deploy:
-    name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
+    name: "Deploy Sandbox"
     uses: D2nke/my_workflows/.github/actions/deploy.yml@feat/new_base
     secrets: inherit
