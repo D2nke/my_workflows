@@ -15,8 +15,8 @@ on:
         default: false
 
 jobs:
-  tests:
-    name: "Run Tests"
+  tests_scan:
+    name: "Run Tests and Secury Scan"
     runs-on: ubuntu-latest
     steps:
 
@@ -78,11 +78,6 @@ jobs:
       - name: "✓ Testes Node concluídos"
         run: echo "✓ Testes passaram! Coverage enviará para SonarQube"
 
-  security:
-    name: Security Scan
-    needs: tests
-    runs-on: ubuntu-latest
-    steps:
       - name: "Scan sonar + snyk"
         uses: D2nke/actions/security-scan@feat/new_code_base
         with:
@@ -95,7 +90,7 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: security
+    needs: tests_scan
     if: ${{ inputs.pr-check == false }}
     steps:
       - name: "Build Docker image"
