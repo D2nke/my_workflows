@@ -37,7 +37,10 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           echo "→ Executando Jest/tests..."
-          npm test -- --coverage --passWithNoTests 2>/dev/null || npm test 2>/dev/null || echo "✓ Sem testes configurados"
+          npm test -- --coverage --passWithNoTests \
+            --coverageReporters=json-summary \
+            --coverageReporters=lcov \
+            --coverageReporters=text
           echo "✓ Testes completados"
 
       - name: "📈 Extraindo cobertura (se disponível)"
