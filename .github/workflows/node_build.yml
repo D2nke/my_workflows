@@ -34,6 +34,9 @@ jobs:
 
       - name: Pre-Build Validation
         uses: D2nke/actions/pre-build@feat/new_code_base
+        with:
+          docker_registry: ${{ vars.DOCKER_REGISTRY }}
+          fly_app_name: ${{ vars.FLY_APP_NAME }}
 
       - name: "🟢 Setup Node ${{ inputs.node-version }}"
         uses: actions/setup-node@v4
