@@ -2,6 +2,16 @@ name: Sandbox (Node)
 
 on:
   workflow_dispatch:
+    inputs:
+      enable-test:
+        type: boolean
+        default: false
+      enable-sonar:
+        type: boolean
+        default: false
+      enable-snyk:
+        type: boolean
+        default: false
 
 jobs:
   sandbox-info:
@@ -21,43 +31,45 @@ jobs:
   pre-build:
     name: Pre-Build Validation
     needs: sandbox-info
-    uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
+    uses: D2nke/my_workflows/.github/workflows/pre-build.yml@fix/bugs
 
   tests:
+    if: ${{ inputs.enable-test }}
     name: Unit Tests
     needs: pre-build
-    uses: D2nke/my_workflows/.github/workflows/test-node.yml@latest
+    uses: D2nke/my_workflows/.github/workflows/test-node.yml@fix/bugs
     secrets: inherit
 
   security:
     name: Security Scan
     needs: tests
-    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
+    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@fix/bugs
     with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-staging
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
       sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
-      enable_snyk: true
-      enable_sonar: true
+      enable_snyk: ${{ inputs.enable-snyk }}
+      enable_sonar: ${{ inputs.enable-sonar }}
       coverage_report_paths: "coverage/lcov.info,coverage/coverage-summary.json"
     secrets: inherit
 
   docker-build:
     name: Build Docker Image
     needs: security
-    uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
+    if: always()
+    uses: D2nke/my_workflows/.github/workflows/build-docker.yml@fix/bugs
     with:
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile
       context: .
       tag: ${{ github.sha }}-dev
+    secrets: inherit
 
   sandbox-deploy:
     name: "🚀 Deploy to Sandbox"
     needs: docker-build
-    uses: D2nke/my_workflows/.github/workflows/deploy.yml@latest
+    if: always()
+    uses: D2nke/my_workflows/.github/workflows/deploy.yml@fix/bugs
     with:
-      fly_app: ${{ vars.FLY_APP_DEV }}
       environment: dev
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
-      image_tag: ${{ github.sha }}-dev
+      image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
     secrets: inherit
