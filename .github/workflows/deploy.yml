@@ -46,10 +46,13 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
-          org_name"${{ vars.FLY_ORG }}"
+          org_name="${{ vars.FLY_ORG }}"
           name_app="${{ inputs.fly_app }}"
           owner_app="${{ github.repository_owner }}"
           name_app="$org_name-${name_app//_/-}-$owner_app"
+
+          echo "Formando nome da aplicação:"
+          echo "name app: $name_app"
 
           flyctl status --app "$name_app" 2>/dev/null \
             || flyctl apps create --name "$name_app" --org "${{ vars.FLY_ORG }}"
