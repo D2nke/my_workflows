@@ -1,7 +1,8 @@
 name: Deploy (Fly.io)
 
 on:
-
+  workflow_call:
+    
 jobs:
   deploy:
     name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"

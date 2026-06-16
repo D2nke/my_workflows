@@ -1,7 +1,8 @@
 name: Release Tag
 
 on:
-
+  workflow_call: 
+  
 jobs:
   release-tag:
     name: Create Release Tag
