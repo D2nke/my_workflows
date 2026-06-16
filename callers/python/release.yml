@@ -11,22 +11,9 @@ jobs:
     name: Pre-Build Validation
     uses: D2nke/my_workflows/.github/workflows/pre-build.yml@latest
 
-  security-scan:
-    name: Security Scan (Snyk + SonarQube)
-    needs: pre-build
-    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
-    with:
-      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
-      sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
-      enable_snyk: true
-      enable_sonar: true
-      coverage_report_paths: "coverage.xml"
-    secrets: inherit
-    continue-on-error: true
-
   tests:
     name: Unit Tests
-    needs: security-snyk
+    needs: pre-build
     uses: D2nke/my_workflows/.github/workflows/test-python.yml@latest
     with:
       python_version: '3.11'
@@ -35,12 +22,24 @@ jobs:
       coverage_fail_under: 70
     secrets: inherit
 
+  security-scan:
+    name: Security Scan (Snyk + SonarQube)
+    needs: tests
+    uses: D2nke/my_workflows/.github/workflows/security-scan.yml@latest
+    with:
+      sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}
+      sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
+      enable_snyk: true
+      enable_sonar: true
+      coverage_report_paths: "coverage.xml"
+    secrets: inherit
+
   docker-build:
     name: Build Docker Image
-    needs: tests
+    needs: security-scan
     uses: D2nke/my_workflows/.github/workflows/build-docker.yml@latest
     with:
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/ml-pipeline
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile
       context: .
       tag: ${{ github.sha }}
@@ -51,11 +50,11 @@ jobs:
     needs: docker-build
     uses: D2nke/my_workflows/.github/workflows/deploy.yml@latest
     with:
-      target: server
+      fly_app: ${{ vars.FLY_APP_NAME }}
       environment: prd
-      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/ml-pipeline
+      image_name: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      image_tag: ${{ github.sha }}
     secrets: inherit
-    continue-on-error: true
 
   release-tag:
     name: Create Release Tag
@@ -67,20 +66,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "📝 Generate version"
+      - name: "📝 Gerando versão..."
         id: version
         run: |
           VERSION="v0.0.${{ github.run_number }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "→ Version: $VERSION"
 
-      - name: "🏷️  Create git tag"
+      - name: "🏷️  Criando git tag..."
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git tag -a ${{ steps.version.outputs.version }} -m "Release ${{ steps.version.outputs.version }}"
           git push origin ${{ steps.version.outputs.version }}
-          echo "✓ Tag pushed"
+          echo "✓ Tag ${{ steps.version.outputs.version }} criada e enviada"
 
       - name: "✓ Release concluído"
-        run: echo "✓ Release ${{ steps.version.outputs.version }} criado"
+        run: echo "✓ Release ${{ steps.version.outputs.version }} finalizado"

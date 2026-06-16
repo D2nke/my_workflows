@@ -1,84 +1,93 @@
-name: Deploy
+name: Deploy (Fly.io)
 
 on:
   workflow_call:
     inputs:
-      target:
-        description: "Deploy target: server | databricks | azure-app-service"
-        required: true
+      fly_app:
+        description: "Nome do app no Fly.io"
         type: string
+        default: ${{ github.event.repository.name }}
       environment:
-        description: "Environment: dev | hom | prd"
+        description: "Ambiente: dev | staging | prd"
         required: true
         type: string
       image_name:
-        description: "Docker image to deploy (for server/azure targets)"
+        description: "Imagem Docker completa (ex: docker.io/user/app)"
+        required: true
+        type: string
+      image_tag:
+        description: "Tag da imagem Docker"
         required: false
         type: string
-      databricks_job_id:
-        description: "Databricks job ID (for databricks target)"
-        required: false
-        type: string
+        default: "latest"
     secrets:
-      ssh_private_key:
-        required: false
-      azure_credentials:
-        required: false
-      databricks_token:
-        required: false
-
-env:
-  SERVER_ADDRESS: ${{ vars[format('{0}_SERVER', inputs.environment)] }}
+      FLY_API_TOKEN:
+        required: true
 
 jobs:
   deploy:
-    name: Deploy to ${{ inputs.environment }}
+    name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
+      - name: "🔧 Instalando Fly CLI..."
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
-      # Deploy em servidor Linux via SSH
-      - name: "🚀 Deploy to Linux server"
-        if: inputs.target == 'server'
+      - name: "🔍 Verificando conexão com o Fly.io..."
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.ssh_private_key }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
-          echo "→ Configurando SSH..."
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          echo "→ Deployando em ${{ env.SERVER_ADDRESS }}..."
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deploy@${{ env.SERVER_ADDRESS }} \
-            "docker pull ${{ inputs.image_name }}:latest && \
-             docker stop app || true && \
-             docker rm app || true && \
-             docker run -d --name app --restart always ${{ inputs.image_name }}:latest"
-          echo "✓ Deploy no servidor completado"
+          echo "→ Verificando conexão com o Fly.io..."
+          flyctl auth whoami
+          echo "✓ Conexão bem sucedida"
 
-      # Deploy no Databricks
-      - name: "🚀 Trigger Databricks job"
-        if: inputs.target == 'databricks'
+      - name: "📋 Criando app se não existir..."
+        id: create-app
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
-          echo "→ Triggering Databricks job..."
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.databricks_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{"job_id": ${{ inputs.databricks_job_id }}}' \
-            https://${{ env.SERVER_ADDRESS }}/api/2.1/jobs/run-now
-          echo "✓ Databricks job triggered"
-        continue-on-error: true
+          org_name="${{ vars.FLY_ORG }}"
+          org_name="${org_name,,}"
 
-      # Deploy no Azure App Service
-      - name: "🚀 Deploy to Azure App Service"
-        if: inputs.target == 'azure-app-service'
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ vars.AZURE_APP_NAME }}
-          images: ${{ inputs.image_name }}:latest
-          credentials: ${{ secrets.azure_credentials }}
+          name_app="${{ inputs.fly_app }}"
+          name_app="${name_app,,}"
 
-      - name: "✓ Deploy concluído"
-        run: echo "✓ Deploy em ${{ inputs.environment }} finalizado"
+          owner_app="${{ github.repository_owner }}"
+          owner_app="${owner_app,,}"
+
+          name_app="$org_name-${name_app//_/-}-$owner_app"
+          echo "name_app=$name_app" >> $GITHUB_OUTPUT
+
+          echo "Formando nome da aplicação:"
+          echo "name app: $name_app"
+
+          flyctl status --app "$name_app" 2>/dev/null \
+            || flyctl apps create --name "$name_app" --org "${{ vars.FLY_ORG }}"
+
+      - name: "🚀 Deployando no Fly.io..."
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          NAME_APP: ${{ steps.create-app.outputs.name_app }}
+        run: |
+          echo "→ Iniciando deploy..."
+          echo "  App:      $NAME_APP"
+          echo "  Imagem:   ${{ inputs.image_name }}:${{ inputs.image_tag }}"
+          echo "  Ambiente: ${{ inputs.environment }}"
+          flyctl deploy \
+            --app $NAME_APP \
+            --image ${{ inputs.image_name }}:${{ inputs.image_tag }} \
+            --strategy rolling \
+            --ha=false
+          echo "✓ Deploy concluído com sucesso"
+
+      - name: "✓ Deploy finalizado"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          NAME_APP: ${{ steps.create-app.outputs.name_app }}
+        run: |
+          echo "✓ App '$NAME_APP' rodando em ${{ inputs.environment }}"
+          flyctl status --app $NAME_APP

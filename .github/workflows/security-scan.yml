@@ -56,25 +56,14 @@ jobs:
             --json-file-output=snyk-results.json
         continue-on-error: true
 
-      - name: "📋 Parse Snyk Results"
-        id: snyk-results
+      - name: "📋 Snyk Results Summary"
         run: |
           if [[ -f "snyk-results.json" ]]; then
-            echo "→ Snyk: Scanning dependencies..."
-            cat snyk-results.json | jq '.vulnerabilities[]? | "\(.severity): \(.title)"' || echo "✓ No vulnerabilities found"
-            echo "✓ Snyk scan completed"
-          else
-            echo "✓ Snyk: No vulnerabilities detected"
-          fi
-        continue-on-error: true
-
-      - name: "⚠️  Snyk Results Summary"
-        run: |
-          if [[ -f "snyk-results.json" ]]; then
+            jq -r '.vulnerabilities[]? | "\(.severity): \(.title)"' snyk-results.json || true
             VULNS=$(jq '.summary.total // 0' snyk-results.json 2>/dev/null)
-            echo "Found $VULNS vulnerabilities"
+            echo "→ Total vulnerabilities: $VULNS"
           else
-            echo "✓ No dependency vulnerabilities found"
+            echo "✓ No vulnerabilities found"
           fi
         continue-on-error: true
 
@@ -95,19 +84,18 @@ jobs:
           echo "✓ Relatórios identificados"
 
       - name: "🔍 SonarQube Scan"
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.projectKey=${{ inputs.sonar_project_key || format('{0}-{1}', github.repository_owner, github.event.repository.name) }}
             ${{ inputs.sonar_organization && format('-Dsonar.organization={0}', inputs.sonar_organization) || '' }}
             -Dsonar.sources=.
-            -Dsonar.coverage.exclusions=**/node_modules/**,**/*.test.js,**/*.test.py,**/tests/**
-            ${{ inputs.coverage_report_paths && format('-Dsonar.javascript.lcov.reportPaths={0}', inputs.coverage_report_paths) || '' }}
+            -Dsonar.organization=${{ vars.SONAR_ORG_KEY }}
+            -Dsonar.coverage.exclusions=**/.github/**,**/node_modules/**,**/*.test.js,**/*.test.py,**/tests/**,Dockerfile
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.qualitygate.wait=true
-        continue-on-error: true
 
       - name: "✓ SonarQube scan concluído"
         run: |
