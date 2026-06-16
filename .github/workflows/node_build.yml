@@ -24,9 +24,9 @@ on:
         default: false
 
 jobs:
-  # pre-build:
-  #   name: Pre-Build Validation
-  #   uses: D2nke/my_workflows/.github/actions/pre-build.yml@feat/new_base
+  pre-build:
+    name: Pre-Build Validation
+    uses: D2nke/actions/pre-build.yml@feat/new_code_base
 
   tests:
     name: "Run Tests"
