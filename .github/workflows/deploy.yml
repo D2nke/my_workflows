@@ -77,7 +77,8 @@ jobs:
           flyctl deploy \
             --app $NAME_APP \
             --image ${{ inputs.image_name }}:${{ inputs.image_tag }} \
-            --strategy rolling
+            --strategy rolling \
+            --ha=false
           echo "✓ Deploy concluído com sucesso"
 
       - name: "✓ Deploy finalizado"
