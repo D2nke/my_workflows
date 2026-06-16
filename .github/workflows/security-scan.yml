@@ -92,6 +92,7 @@ jobs:
             -Dsonar.projectKey=${{ inputs.sonar_project_key || format('{0}-{1}', github.repository_owner, github.event.repository.name) }}
             ${{ inputs.sonar_organization && format('-Dsonar.organization={0}', inputs.sonar_organization) || '' }}
             -Dsonar.sources=.
+            -Dsonar.organization=${{ vars.SONAR_ORG_KEY }}
             -Dsonar.coverage.exclusions=**/node_modules/**,**/*.test.js,**/*.test.py,**/tests/**
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.qualitygate.wait=true
