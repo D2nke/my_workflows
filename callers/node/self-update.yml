@@ -10,7 +10,7 @@ on:
 jobs:
   update-workflows:
     name: Update Workflow Files from Source
-    uses: D2nke/my_workflows/.github/workflows/files-update.yml@latest
+    uses: D2nke/my_workflows/.github/actions/files-update.yml@latest
     with:
       source-repo: D2nke/my_workflows
       source-dir: callers/node

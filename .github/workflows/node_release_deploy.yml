@@ -5,12 +5,12 @@ on:
 jobs:
   deploy:
     name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
-    uses: D2nke/my_workflows/.github/workflows/actions/deploy.yml@latest
+    uses: D2nke/my_workflows/.github/actions/deploy.yml@latest
     with:
       environment: prd
     secrets: inherit
       
   release_tag:
     name: "Create tag for new release"
-    uses: D2nke/my_workflows/.github/workflows/actions/release-tag.yml@latest
+    uses: D2nke/my_workflows/.github/actions/release-tag.yml@latest
     secrets: inherit

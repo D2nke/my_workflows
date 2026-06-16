@@ -26,7 +26,7 @@ on:
 jobs:
   pre-build:
     name: Pre-Build Validation
-    uses: D2nke/my_workflows/.github/workflows/actions/pre-build.yml@latest
+    uses: D2nke/my_workflows/.github/actions/pre-build.yml@latest
 
   tests:
     if: ${{ inputs.enable-test }}
@@ -89,7 +89,7 @@ jobs:
   security:
     name: Security Scan
     needs: tests
-    uses: D2nke/my_workflows/.github/workflows/actions/security-scan.yml@latest
+    uses: D2nke/my_workflows/.github/actions/security-scan.yml@latest
     with:
       sonar_project_key: ${{ github.repository_owner }}-${{ github.event.repository.name }}-dev
       sonar_organization: ${{ vars.SONAR_ORGANIZATION || '' }}
@@ -102,7 +102,7 @@ jobs:
     name: Build Docker Image
     needs: security
     if: ${{ inputs.pr-check == 'false' }}
-    uses: D2nke/my_workflows/.github/workflows/actions/build-docker.yml@latest
+    uses: D2nke/my_workflows/.github/actions/build-docker.yml@latest
     with:
       image_name: docker.io/${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}
       dockerfile: ./Dockerfile

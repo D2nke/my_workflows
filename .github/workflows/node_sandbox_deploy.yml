@@ -5,5 +5,5 @@ on:
 jobs:
   deploy:
     name: "Deploy ${{ inputs.fly_app }} → ${{ inputs.environment }}"
-    uses: D2nke/my_workflows/.github/workflows/actions/deploy.yml@latest
+    uses: D2nke/my_workflows/.github/actions/deploy.yml@latest
     secrets: inherit
