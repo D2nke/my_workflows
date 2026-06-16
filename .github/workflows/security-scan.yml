@@ -93,7 +93,7 @@ jobs:
             ${{ inputs.sonar_organization && format('-Dsonar.organization={0}', inputs.sonar_organization) || '' }}
             -Dsonar.sources=.
             -Dsonar.organization=${{ vars.SONAR_ORG_KEY }}
-            -Dsonar.coverage.exclusions=**/node_modules/**,**/*.test.js,**/*.test.py,**/tests/**
+            -Dsonar.coverage.exclusions=**/.github/**,**/node_modules/**,**/*.test.js,**/*.test.py,**/tests/**,Dockerfile
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.qualitygate.wait=true
 
